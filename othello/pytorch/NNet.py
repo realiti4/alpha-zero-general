@@ -14,6 +14,9 @@ import torch.optim as optim
 
 from .OthelloNNet import OthelloNNet as onnet
 
+from torch.cuda.amp import autocast
+from torch.cuda.amp import GradScaler
+
 args = dotdict({
     'lr': 0.001,
     'dropout': 0.3,
@@ -38,6 +41,7 @@ class NNetWrapper(NeuralNet):
         examples: list of examples, each example is of form (board, pi, v)
         """
         optimizer = optim.Adam(self.nnet.parameters())
+        scaler = GradScaler()
 
         for epoch in range(args.epochs):
             print('EPOCH ::: ' + str(epoch + 1))
@@ -59,21 +63,30 @@ class NNetWrapper(NeuralNet):
                 if args.cuda:
                     boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
 
-                # compute output
-                out_pi, out_v = self.nnet(boards)
-                l_pi = self.loss_pi(target_pis, out_pi)
-                l_v = self.loss_v(target_vs, out_v)
-                total_loss = l_pi + l_v
+                # TODO - add mixed precision
+                with autocast(enabled=True):
+                
+                    # compute output
+                    out_pi, out_v = self.nnet(boards)
+                    l_pi = self.loss_pi(target_pis, out_pi)
+                    l_v = self.loss_v(target_vs, out_v)
+                    total_loss = l_pi + l_v
 
                 # record loss
                 pi_losses.update(l_pi.item(), boards.size(0))
                 v_losses.update(l_v.item(), boards.size(0))
                 t.set_postfix(Loss_pi=pi_losses, Loss_v=v_losses)
 
+                # TODO - add mixed precision - GradScaler
+
                 # compute gradient and do SGD step
                 optimizer.zero_grad()
-                total_loss.backward()
-                optimizer.step()
+                # total_loss.backward()
+                # optimizer.step()
+                scaler.scale(total_loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+                
 
     def predict(self, board):
         """
