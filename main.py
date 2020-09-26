@@ -2,10 +2,21 @@ import logging
 
 import coloredlogs
 
-from Coach import Coach
-from othello.OthelloGame import OthelloGame as Game
-from othello.pytorch.NNet import NNetWrapper as nn
+from Coach_single import Coach
+# from othello.OthelloGame import OthelloGame as Game
+# from othello.pytorch.NNet import NNetWrapper as nn
+from trading.OthelloGame import OthelloGame as Game
+from trading.pytorch.NNet import NNetWrapper as nn
 from utils import *
+
+import gym
+import gym_trading
+
+env = gym.make('btc-dev-mcts-v1',
+            state_window=720+96,      # 96, 168, 1440 eski
+            history_size=720,
+            testing=True,
+            columns = ['close'])
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +34,7 @@ args = dotdict({
 
     'checkpoint': './temp/',
     'load_model': False,
-    'load_folder_file': ('/dev/models/8x100x50','best.pth.tar'),
+    'load_folder_file': ('./temp','checkpoint_7.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 
 })
@@ -32,6 +43,7 @@ args = dotdict({
 def main():
     log.info('Loading %s...', Game.__name__)
     g = Game(6)
+    # g = env
 
     log.info('Loading %s...', nn.__name__)
     nnet = nn(g)
