@@ -53,10 +53,10 @@ class Coach():
         while True:
             episodeStep += 1
             canonicalBoard = self.game.getCanonicalForm(board, self.curPlayer)
-            temp = int(episodeStep < self.args.tempThreshold)
+            temp = int(episodeStep < self.args.tempThreshold)   # Boolean in int
 
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
-            sym = self.game.getSymmetries(canonicalBoard, pi)
+            sym = self.game.getSymmetries(canonicalBoard, pi)   # TODO what is this
             for b, p in sym:
                 trainExamples.append([b, self.curPlayer, p, None])
 

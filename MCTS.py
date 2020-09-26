@@ -38,7 +38,7 @@ class MCTS():
             self.search(canonicalBoard)
 
         s = self.game.stringRepresentation(canonicalBoard)
-        counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
+        counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]  # TODO check here
 
         if temp == 0:
             bestAs = np.array(np.argwhere(counts == np.max(counts))).flatten()
@@ -98,7 +98,7 @@ class MCTS():
                 self.Ps[s] /= np.sum(self.Ps[s])
 
             self.Vs[s] = valids
-            self.Ns[s] = 0
+            self.Ns[s] = 0      # TODO why is this resetting each time?
             return -v
 
         valids = self.Vs[s]
@@ -110,9 +110,9 @@ class MCTS():
             if valids[a]:
                 if (s, a) in self.Qsa:
                     u = self.Qsa[(s, a)] + self.args.cpuct * self.Ps[s][a] * math.sqrt(self.Ns[s]) / (
-                            1 + self.Nsa[(s, a)])
+                            1 + self.Nsa[(s, a)])   # TODO what is this?
                 else:
-                    u = self.args.cpuct * self.Ps[s][a] * math.sqrt(self.Ns[s] + EPS)  # Q = 0 ?
+                    u = self.args.cpuct * self.Ps[s][a] * math.sqrt(self.Ns[s] + EPS)  # Q = 0 ?    TODO what is this Q?, why sqrt(self.Ns[s]
 
                 if u > cur_best:
                     cur_best = u
@@ -122,7 +122,7 @@ class MCTS():
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
         next_s = self.game.getCanonicalForm(next_s, next_player)
 
-        v = self.search(next_s)
+        v = self.search(next_s)     # We are at s, but we got next state's v, leaf node?
 
         if (s, a) in self.Qsa:
             self.Qsa[(s, a)] = (self.Nsa[(s, a)] * self.Qsa[(s, a)] + v) / (self.Nsa[(s, a)] + 1)
