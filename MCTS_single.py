@@ -76,7 +76,7 @@ class MCTS():
         """
 
         s = self.game.stringRepresentation(canonicalBoard)
-        s = cboard_dev.tostring()
+        # s = cboard_dev.tostring()
 
         if s not in self.Es:
             self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
@@ -87,7 +87,7 @@ class MCTS():
 
         if s not in self.Ps:
             # leaf node
-            self.Ps[s], v = self.nnet.predict(canonicalBoard)
+            self.Ps[s], v = self.nnet.predict(canonicalBoard, cboard_dev)
             valids = self.game.getValidMoves(canonicalBoard, 1)
             self.Ps[s] = self.Ps[s] * valids  # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
@@ -103,7 +103,7 @@ class MCTS():
                 self.Ps[s] /= np.sum(self.Ps[s])
 
             self.Vs[s] = valids
-            self.Ns[s] = 0      # TODO why is this resetting each time?
+            self.Ns[s] = 0      # this is first visit so it is normal to reset the count
             return -v
 
         valids = self.Vs[s]
@@ -111,13 +111,14 @@ class MCTS():
         best_act = -1
 
         # pick the action with the highest upper confidence bound
+        # cpuct is a constant determining the level of exploration
         for a in range(self.game.getActionSize()):
             if valids[a]:
                 if (s, a) in self.Qsa:
                     u = self.Qsa[(s, a)] + self.args.cpuct * self.Ps[s][a] * math.sqrt(self.Ns[s]) / (
-                            1 + self.Nsa[(s, a)])   # TODO what is this?
+                            1 + self.Nsa[(s, a)])
                 else:
-                    u = self.args.cpuct * self.Ps[s][a] * math.sqrt(self.Ns[s] + EPS)  # Q = 0 ?    TODO what is this Q?, why sqrt(self.Ns[s]
+                    u = self.args.cpuct * self.Ps[s][a] * math.sqrt(self.Ns[s] + EPS)  # upper confidence, EPS for to not get zero?
 
                 if u > cur_best:
                     cur_best = u
@@ -127,10 +128,10 @@ class MCTS():
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
         next_s = self.game.getCanonicalForm(next_s, next_player)
 
-        v = self.search(next_s)     # We are at s, but we got next state's v, leaf node?
+        v = self.search(next_s)     # We are at s, but we got next state's v
 
         if (s, a) in self.Qsa:
-            self.Qsa[(s, a)] = (self.Nsa[(s, a)] * self.Qsa[(s, a)] + v) / (self.Nsa[(s, a)] + 1)
+            self.Qsa[(s, a)] = (self.Nsa[(s, a)] * self.Qsa[(s, a)] + v) / (self.Nsa[(s, a)] + 1)   # what is this
             self.Nsa[(s, a)] += 1
 
         else:

@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
-from torch.autograd import Variable
 
 class OthelloNNet(nn.Module):
     def __init__(self, game, args):
@@ -52,5 +51,33 @@ class OthelloNNet(nn.Module):
 
         pi = self.fc3(s)                                                                         # batch_size x action_size
         v = self.fc4(s)                                                                          # batch_size x 1
+
+        return F.log_softmax(pi, dim=1), torch.tanh(v)
+
+
+class dev_net(nn.Module):
+    def __init__(self, args):
+        super(dev_net, self).__init__()
+        self.args = args
+
+        self.conv1 = nn.Conv1d(48, 512, 3, stride=1, padding=1)
+
+        self.bn1 = nn.BatchNorm2d(512)
+
+        self.fc1 = nn.Linear(512, 512)     # (512, 1024)
+        self.fc_bn1 = nn.BatchNorm1d(1024)
+
+        self.fc3 = nn.Linear(512, 2)
+        self.fc4 = nn.Linear(512, 1)
+
+    def forward(self, s):
+        # s = F.relu(self.bn1(self.conv1(s)))     # TODO fix bn, it is not accepting 1 feature
+        s = F.relu(self.conv1(s))
+        s = s.squeeze(-1)
+
+        s = F.dropout(self.fc1(s), p=self.args.dropout, training=self.training)
+
+        pi = self.fc3(s)
+        v = self.fc4(s)
 
         return F.log_softmax(pi, dim=1), torch.tanh(v)
