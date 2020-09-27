@@ -20,9 +20,11 @@ class Coach():
     in Game and NeuralNet. args are specified in main.py.
     """
 
-    def __init__(self, game, nnet, args):
+    def __init__(self, game, nnet, args, game_dev=None, nnet_dev=None):
         self.game = game
+        self.game_dev = game_dev
         self.nnet = nnet
+        self.nnet_dev = nnet_dev
         self.pnet = self.nnet.__class__(self.game)  # the competitor network
         self.args = args
         self.mcts = MCTS(self.game, self.nnet, self.args)
@@ -47,6 +49,7 @@ class Coach():
         """
         trainExamples = []
         board = self.game.getInitBoard()
+        board_dev = self.game_dev.reset(key=4)
         self.curPlayer = 1
         episodeStep = 0
 
@@ -55,7 +58,7 @@ class Coach():
             canonicalBoard = self.game.getCanonicalForm(board, self.curPlayer)
             temp = int(episodeStep < self.args.tempThreshold)   # Boolean in int
 
-            pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
+            pi = self.mcts.getActionProb(canonicalBoard, temp=temp, cboard_dev=board_dev)
             sym = self.game.getSymmetries(canonicalBoard, pi)   # TODO what is this, gets all symmetries but why?
             for b, p in sym:
                 trainExamples.append([b, self.curPlayer, p, None])
@@ -85,7 +88,7 @@ class Coach():
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
 
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
-                    self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
+                    self.mcts = MCTS(self.game, self.nnet, self.args, game_dev=self.game_dev)  # reset search tree
                     iterationTrainExamples += self.executeEpisode()
 
                 # save the iteration examples to the history 

@@ -13,9 +13,11 @@ class MCTS():
     This class handles the MCTS tree.
     """
 
-    def __init__(self, game, nnet, args):
+    def __init__(self, game, nnet, args, game_dev=None, nnet_dev=None):
         self.game = game
+        self.game_dev = game_dev
         self.nnet = nnet
+        self.nnet_dev = nnet_dev
         self.args = args
         self.Qsa = {}  # stores Q values for s,a (as defined in the paper)
         self.Nsa = {}  # stores #times edge s,a was visited
@@ -25,7 +27,7 @@ class MCTS():
         self.Es = {}  # stores game.getGameEnded ended for board s
         self.Vs = {}  # stores game.getValidMoves for board s
 
-    def getActionProb(self, canonicalBoard, temp=1):
+    def getActionProb(self, canonicalBoard, temp=1, cboard_dev=None):
         """
         This function performs numMCTSSims simulations of MCTS starting from
         canonicalBoard.
@@ -35,7 +37,7 @@ class MCTS():
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
-            self.search(canonicalBoard)
+            self.search(canonicalBoard, cboard_dev=cboard_dev)
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]  # TODO check here
@@ -53,7 +55,7 @@ class MCTS():
         probs = [x / counts_sum for x in counts]
         return probs
 
-    def search(self, canonicalBoard):
+    def search(self, canonicalBoard, cboard_dev=None):
         """
         This function performs one iteration of MCTS. It is recursively called
         till a leaf node is found. The action chosen at each node is one that
@@ -74,9 +76,11 @@ class MCTS():
         """
 
         s = self.game.stringRepresentation(canonicalBoard)
+        s = cboard_dev.tostring()
 
         if s not in self.Es:
             self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
+            # self.Es[s] = self.game_dev.getGameEnded()
         if self.Es[s] != 0:
             # terminal node
             return -self.Es[s]
