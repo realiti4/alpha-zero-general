@@ -104,7 +104,7 @@ class MCTS():
 
             self.Vs[s] = valids
             self.Ns[s] = 0      # this is first visit so it is normal to reset the count
-            return -v
+            return -v   # TODO possible single-player fix
 
         valids = self.Vs[s]
         cur_best = -float('inf')
@@ -126,12 +126,12 @@ class MCTS():
 
         a = best_act
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
-        next_s = self.game.getCanonicalForm(next_s, next_player)
+        next_s = self.game.getCanonicalForm(next_s, next_player)    # TODO single-player
 
         v = self.search(next_s)     # We are at s, but we got next state's v
 
         if (s, a) in self.Qsa:
-            self.Qsa[(s, a)] = (self.Nsa[(s, a)] * self.Qsa[(s, a)] + v) / (self.Nsa[(s, a)] + 1)   # what is this
+            self.Qsa[(s, a)] = (self.Nsa[(s, a)] * self.Qsa[(s, a)] + v) / (self.Nsa[(s, a)] + 1)   # what kind of update is this?
             self.Nsa[(s, a)] += 1
 
         else:

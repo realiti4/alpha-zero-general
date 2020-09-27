@@ -55,7 +55,7 @@ class Coach():
 
         while True:
             episodeStep += 1
-            canonicalBoard = self.game.getCanonicalForm(board, self.curPlayer)
+            canonicalBoard = self.game.getCanonicalForm(board, self.curPlayer)  # TODO single-player
             temp = int(episodeStep < self.args.tempThreshold)   # Boolean in int
 
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp, cboard_dev=board_dev)

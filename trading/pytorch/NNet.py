@@ -100,14 +100,14 @@ class NNetWrapper(NeuralNet):
 
         # preparing input
         board = torch.FloatTensor(board.astype(np.float64))
-        board_dev = torch.FloatTensor(board_dev).cuda().view(1, 48, 1)
+        # board_dev = torch.FloatTensor(board_dev).cuda().view(1, 48, 1)
         if args.cuda: board = board.contiguous().cuda()     # TODO check if contiguous is needed
         board = board.view(1, self.board_x, self.board_y)   # [1, 6, 6]
         self.nnet.eval()
         self.dev_net.eval()
         with torch.no_grad():
             pi, v = self.nnet(board)
-            pi2, v2 = self.dev_net(board_dev)
+            # pi2, v2 = self.dev_net(board_dev)
 
         # print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
         return pi.exp().cpu().numpy()[0], v.cpu().numpy()[0]
