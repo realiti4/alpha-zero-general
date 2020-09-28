@@ -5,7 +5,7 @@ import coloredlogs
 from Coach_single import Coach
 # from othello.OthelloGame import OthelloGame as Game
 # from othello.pytorch.NNet import NNetWrapper as nn
-from trading.OthelloGame import OthelloGame as Game
+# from trading.OthelloGame import OthelloGame as Game
 from trading.pytorch.NNet import NNetWrapper as nn
 from utils import *
 
@@ -41,7 +41,7 @@ args = dotdict({
 
 
 def main():
-    log.info('Loading %s...', Game.__name__)
+    # log.info('Loading %s...', Game.__name__)
     g = env
 
     log.info('Loading %s...', nn.__name__)

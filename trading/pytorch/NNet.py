@@ -12,8 +12,8 @@ from NeuralNet import NeuralNet
 import torch
 import torch.optim as optim
 
-from .OthelloNNet import OthelloNNet as onnet
-from .OthelloNNet import dev_net
+from .TradingNNet import OthelloNNet as onnet
+from .TradingNNet import dev_net
 
 from torch.cuda.amp import autocast
 from torch.cuda.amp import GradScaler
