@@ -98,3 +98,46 @@ class Arena():
                 draws += 1
 
         return oneWon, twoWon, draws
+
+
+# Single-player MCTS
+import numpy as np
+
+def simple_evaluation(game, game_dev, mcts):
+    trainExamples = []
+    board = game.getInitBoard()
+    board_dev = game_dev.reset(key=4)
+    episodeStep = 0
+
+    while True:
+        canonicalBoard = game.getCanonicalForm(board, 1)
+
+        pi = mcts.getActionProb(canonicalBoard, temp=0, cboard_dev=board_dev)
+        trainExamples.append([board_dev, pi])
+
+        action = np.argmax(pi)
+        board_dev, _, _, info = game_dev.step(action)
+
+        r = game_dev.getGameEnded()
+
+        if r != 0:
+            print(r)
+            print(info)
+            return info['achievement']
+
+
+    for i in range(10000):
+        with torch.no_grad():
+            _, action, _ = model(state.unsqueeze(1))
+
+        state, reward, done, info = env_evaluate.step(action.item())
+        state = torch.from_numpy(state).float().to(device)
+
+        if render:
+            env_evaluate.render()
+
+        if done:
+            rewards.append(info['reward'])
+            achievements.append(info['achievement'])
+            break
+

@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import copy
 from collections import deque
 from pickle import Pickler, Unpickler
 from random import shuffle
@@ -8,7 +9,7 @@ from random import shuffle
 import numpy as np
 from tqdm import tqdm
 
-from Arena import Arena
+from Arena import Arena, simple_evaluation
 from MCTS_single import MCTS
 
 log = logging.getLogger(__name__)
@@ -59,17 +60,23 @@ class Coach():
             temp = int(episodeStep < self.args.tempThreshold)   # Boolean in int
 
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp, cboard_dev=board_dev)
-            sym = self.game.getSymmetries(canonicalBoard, pi)   # TODO what is this, gets all symmetries but why?
-            for b, p in sym:
-                trainExamples.append([b, self.curPlayer, p, None])
+            trainExamples.append([board_dev, pi])
+            # sym = self.game.getSymmetries(canonicalBoard, pi)   # TODO what is this, gets all symmetries but why?
+            # for b, p in sym:
+            #     trainExamples.append([b, self.curPlayer, p, None])
 
             action = np.random.choice(len(pi), p=pi)
-            board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
+            board_dev, _, _, _ = self.game_dev.step(action)
+            # board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
 
-            r = self.game.getGameEnded(board, self.curPlayer)
+            # r = self.game.getGameEnded(board, self.curPlayer)
+            r = self.game_dev.getGameEnded()
 
             if r != 0:
-                return [(x[0], x[2], r * ((-1) ** (x[1] != self.curPlayer))) for x in trainExamples]
+                return [(x[0], x[1], r) for x in trainExamples]
+
+            # if r != 0:
+            #     return [(x[0], x[2], r * ((-1) ** (x[1] != self.curPlayer))) for x in trainExamples]
 
     def learn(self):
         """
@@ -114,21 +121,31 @@ class Coach():
             pmcts = MCTS(self.game, self.pnet, self.args)
 
             self.nnet.train(trainExamples)
-            nmcts = MCTS(self.game, self.nnet, self.args)
+            nmcts = MCTS(self.game, self.nnet, self.args, game_dev=self.game_dev, nnet_dev=self.nnet)
 
-            log.info('PITTING AGAINST PREVIOUS VERSION')
-            arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
-                          lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
-            pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
+            # Arena
+            # TODO add a simple evaluation -for now- for our single-player env
+            simple_evaluation(self.game, self.game_dev, nmcts)
 
-            log.info('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
-            if pwins + nwins == 0 or float(nwins) / (pwins + nwins) < self.args.updateThreshold:
-                log.info('REJECTING NEW MODEL')
-                self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            else:
-                log.info('ACCEPTING NEW MODEL')
-                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
-                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+            # temp
+            log.info('ACCEPTING NEW MODEL')
+            self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
+            self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+
+            # # Original Arena
+            # log.info('PITTING AGAINST PREVIOUS VERSION')
+            # arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
+            #               lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
+            # pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
+
+            # log.info('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
+            # if pwins + nwins == 0 or float(nwins) / (pwins + nwins) < self.args.updateThreshold:
+            #     log.info('REJECTING NEW MODEL')
+            #     self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+            # else:
+            #     log.info('ACCEPTING NEW MODEL')
+            #     self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
+            #     self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'

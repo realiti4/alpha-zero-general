@@ -13,8 +13,8 @@ import gym
 import gym_trading
 
 env = gym.make('btc-dev-mcts-v1',
-            state_window=48+24,      # 96, 168, 1440 eski      720+96
-            history_size=48,
+            state_window=24+4,      # TODO check 48+4 might not be working
+            history_size=24,
             testing=True,
             columns = ['close'])
 
