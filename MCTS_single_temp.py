@@ -1,5 +1,6 @@
 import logging
 import math
+import copy
 
 import numpy as np
 
@@ -37,10 +38,13 @@ class MCTS():
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
-            self.search(canonicalBoard, cboard_dev=cboard_dev)
+            self.game_state_temp = copy.deepcopy(self.game_dev)
+            cboard_dev_search = self.game_state_temp.get_observation()
+            self.search(canonicalBoard, cboard_dev=cboard_dev_search)
 
-        s = self.game.stringRepresentation(canonicalBoard)
-        counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]  # TODO check here
+        # s = self.game.stringRepresentation(canonicalBoard)
+        s = cboard_dev.tobytes()
+        counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game_dev.getActionSize())]  # TODO check here
         # 6 times visited
 
         if temp == 0:
@@ -75,12 +79,13 @@ class MCTS():
             v: the negative of the value of the current canonicalBoard
         """
 
-        s = self.game.stringRepresentation(canonicalBoard)
+        s = self.game.stringRepresentation(canonicalBoard)        
         # s = cboard_dev.tostring()
+        s = cboard_dev.tobytes()
 
         if s not in self.Es:
-            self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
-            # self.Es[s] = self.game_dev.getGameEnded()
+            # self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
+            self.Es[s] = self.game_state_temp.getGameEnded(debug=True)
         if self.Es[s] != 0:
             # terminal node
             return -self.Es[s]
@@ -88,8 +93,8 @@ class MCTS():
         if s not in self.Ps:
             # leaf node
             self.Ps[s], v = self.nnet.predict(canonicalBoard, cboard_dev)
-            valids = self.game.getValidMoves(canonicalBoard, 1)
-            self.Ps[s] = self.Ps[s] * valids  # masking invalid moves
+            # valids = self.game.getValidMoves(canonicalBoard, 1)
+            # self.Ps[s] = self.Ps[s] * valids  # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
             if sum_Ps_s > 0:
                 self.Ps[s] /= sum_Ps_s  # renormalize
@@ -102,33 +107,35 @@ class MCTS():
                 self.Ps[s] = self.Ps[s] + valids
                 self.Ps[s] /= np.sum(self.Ps[s])
 
-            self.Vs[s] = valids
+            # self.Vs[s] = valids
             self.Ns[s] = 0      # this is first visit so it is normal to reset the count
-            return -v   # TODO possible single-player fix
+            return v   # TODO possible single-player fix
 
-        valids = self.Vs[s]
+        # valids = self.Vs[s]
         cur_best = -float('inf')
         best_act = -1
 
         # pick the action with the highest upper confidence bound
         # cpuct is a constant determining the level of exploration
-        for a in range(self.game.getActionSize()):
-            if valids[a]:
-                if (s, a) in self.Qsa:
-                    u = self.Qsa[(s, a)] + self.args.cpuct * self.Ps[s][a] * math.sqrt(self.Ns[s]) / (
-                            1 + self.Nsa[(s, a)])
-                else:
-                    u = self.args.cpuct * self.Ps[s][a] * math.sqrt(self.Ns[s] + EPS)  # upper confidence, EPS for to not get zero?
+        for a in range(self.game_dev.getActionSize()):
+            # if valids[a]:
+            if (s, a) in self.Qsa:
+                u = self.Qsa[(s, a)] + self.args.cpuct * self.Ps[s][a] * math.sqrt(self.Ns[s]) / (
+                        1 + self.Nsa[(s, a)])
+            else:
+                u = self.args.cpuct * self.Ps[s][a] * math.sqrt(self.Ns[s] + EPS)  # upper confidence, EPS for to not get zero?
 
-                if u > cur_best:
-                    cur_best = u
-                    best_act = a
+            if u > cur_best:
+                cur_best = u
+                best_act = a
 
         a = best_act
-        next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
-        next_s = self.game.getCanonicalForm(next_s, next_player)    # TODO single-player
+        next_s, _, _, _ = self.game_state_temp.step(a) 
 
-        v = self.search(next_s)     # We are at s, but we got next state's v
+        # next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
+        # next_s = self.game.getCanonicalForm(next_s, next_player)    # TODO single-player
+
+        v = self.search(canonicalBoard, cboard_dev=next_s)     # We are at s, but we got next state's v
 
         if (s, a) in self.Qsa:
             self.Qsa[(s, a)] = (self.Nsa[(s, a)] * self.Qsa[(s, a)] + v) / (self.Nsa[(s, a)] + 1)   # what kind of update is this?
@@ -139,4 +146,4 @@ class MCTS():
             self.Nsa[(s, a)] = 1
 
         self.Ns[s] += 1
-        return -v
+        return v   # TODO possible single-player fix

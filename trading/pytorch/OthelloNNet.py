@@ -60,7 +60,7 @@ class dev_net(nn.Module):
         super(dev_net, self).__init__()
         self.args = args
 
-        self.conv1 = nn.Conv1d(48, 512, 3, stride=1, padding=1)
+        self.conv1 = nn.Conv1d(24, 512, 3, stride=1, padding=1)
 
         self.bn1 = nn.BatchNorm2d(512)
 
@@ -71,6 +71,8 @@ class dev_net(nn.Module):
         self.fc4 = nn.Linear(512, 1)
 
     def forward(self, s):
+        s, balance = s[:, :-1, :], s[:, -1, :]
+
         # s = F.relu(self.bn1(self.conv1(s)))     # TODO fix bn, it is not accepting 1 feature
         s = F.relu(self.conv1(s))
         s = s.squeeze(-1)

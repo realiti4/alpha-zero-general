@@ -43,7 +43,7 @@ class NNetWrapper(NeuralNet):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
-        optimizer = optim.Adam(self.nnet.parameters())
+        optimizer = optim.Adam(self.dev_net.parameters())
         scaler = GradScaler()
 
         for epoch in range(args.epochs):
@@ -70,7 +70,7 @@ class NNetWrapper(NeuralNet):
                 with autocast(enabled=True):
                 
                     # compute output
-                    out_pi, out_v = self.nnet(boards)
+                    out_pi, out_v = self.dev_net(boards)
                     l_pi = self.loss_pi(target_pis, out_pi)
                     l_v = self.loss_v(target_vs, out_v)
                     total_loss = l_pi + l_v
@@ -100,17 +100,18 @@ class NNetWrapper(NeuralNet):
 
         # preparing input
         board = torch.FloatTensor(board.astype(np.float64))
-        # board_dev = torch.FloatTensor(board_dev).cuda().view(1, 48, 1)
+        board_dev = torch.FloatTensor(board_dev).cuda().view(1, board_dev.size, 1)
         if args.cuda: board = board.contiguous().cuda()     # TODO check if contiguous is needed
         board = board.view(1, self.board_x, self.board_y)   # [1, 6, 6]
         self.nnet.eval()
         self.dev_net.eval()
         with torch.no_grad():
             pi, v = self.nnet(board)
-            # pi2, v2 = self.dev_net(board_dev)
+            pi2, v2 = self.dev_net(board_dev)
 
         # print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
-        return pi.exp().cpu().numpy()[0], v.cpu().numpy()[0]
+        # return pi.exp().cpu().numpy()[0], v.cpu().numpy()[0]
+        return pi2.exp().cpu().numpy()[0], v2.cpu().numpy()[0]
 
     def loss_pi(self, targets, outputs):
         return -torch.sum(targets * outputs) / targets.size()[0]
