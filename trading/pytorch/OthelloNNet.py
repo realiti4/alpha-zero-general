@@ -60,12 +60,15 @@ class dev_net(nn.Module):
         super(dev_net, self).__init__()
         self.args = args
 
-        self.conv1 = nn.Conv1d(24, 512, 3, stride=1, padding=1)
+        self.conv1 = nn.Conv1d(48, 512, 3, stride=1, padding=1)
 
         self.bn1 = nn.BatchNorm2d(512)
 
         self.fc1 = nn.Linear(512, 512)     # (512, 1024)
         self.fc_bn1 = nn.BatchNorm1d(1024)
+
+        self.fc_balance = nn.Linear(1, 512)
+        self.fc_connect = nn.Linear(1024, 512)
 
         self.fc3 = nn.Linear(512, 2)
         self.fc4 = nn.Linear(512, 1)
@@ -78,6 +81,9 @@ class dev_net(nn.Module):
         s = s.squeeze(-1)
 
         s = F.dropout(self.fc1(s), p=self.args.dropout, training=self.training)
+
+        balance = self.fc_balance(balance)
+        s = self.fc_connect(torch.cat((s, balance), dim=1))
 
         pi = self.fc3(s)
         v = self.fc4(s)
