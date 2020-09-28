@@ -21,11 +21,9 @@ class Coach():
     in Game and NeuralNet. args are specified in main.py.
     """
 
-    def __init__(self, game, nnet, args, game_dev=None, nnet_dev=None):
+    def __init__(self, game, nnet, args):
         self.game = game
-        self.game_dev = game_dev
         self.nnet = nnet
-        self.nnet_dev = nnet_dev
         self.pnet = self.nnet.__class__(self.game)  # the competitor network
         self.args = args
         self.mcts = MCTS(self.game, self.nnet, self.args)
@@ -49,28 +47,28 @@ class Coach():
                            the player eventually won the game, else -1.
         """
         trainExamples = []
-        board = self.game.getInitBoard()
-        board_dev = self.game_dev.reset(key=4)
-        self.curPlayer = 1
+        # board = self.game.getInitBoard()
+        canonicalBoard = self.game.reset(key=4)
+        # self.curPlayer = 1
         episodeStep = 0
 
         while True:
             episodeStep += 1
-            canonicalBoard = self.game.getCanonicalForm(board, self.curPlayer)  # TODO single-player
+            # canonicalBoard = self.game.getCanonicalForm(board, self.curPlayer)  # TODO single-player
             temp = int(episodeStep < self.args.tempThreshold)   # Boolean in int
 
-            pi = self.mcts.getActionProb(canonicalBoard, temp=temp, cboard_dev=board_dev)
-            trainExamples.append([board_dev, pi])
+            pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
+            trainExamples.append([canonicalBoard, pi])
             # sym = self.game.getSymmetries(canonicalBoard, pi)   # TODO what is this, gets all symmetries but why?
             # for b, p in sym:
             #     trainExamples.append([b, self.curPlayer, p, None])
 
             action = np.random.choice(len(pi), p=pi)
-            board_dev, _, _, _ = self.game_dev.step(action)
+            canonicalBoard, _, _, _ = self.game.step(action)
             # board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
 
             # r = self.game.getGameEnded(board, self.curPlayer)
-            r = self.game_dev.getGameEnded()
+            r = self.game.getGameEnded()
 
             if r != 0:
                 return [(x[0], x[1], r) for x in trainExamples]
@@ -95,7 +93,7 @@ class Coach():
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
 
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
-                    self.mcts = MCTS(self.game, self.nnet, self.args, game_dev=self.game_dev)  # reset search tree
+                    self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
                     iterationTrainExamples += self.executeEpisode()
 
                 # save the iteration examples to the history 
@@ -121,16 +119,16 @@ class Coach():
             pmcts = MCTS(self.game, self.pnet, self.args)
 
             self.nnet.train(trainExamples)
-            nmcts = MCTS(self.game, self.nnet, self.args, game_dev=self.game_dev, nnet_dev=self.nnet)
+            nmcts = MCTS(self.game, self.nnet, self.args)
 
             # Arena
             # TODO add a simple evaluation -for now- for our single-player env
-            simple_evaluation(self.game, self.game_dev, nmcts)
+            simple_evaluation(self.game, nmcts)
 
             # temp
             log.info('ACCEPTING NEW MODEL')
-            self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
-            self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+            # self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
+            # self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
 
             # # Original Arena
             # log.info('PITTING AGAINST PREVIOUS VERSION')

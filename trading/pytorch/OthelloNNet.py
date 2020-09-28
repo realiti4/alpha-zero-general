@@ -60,7 +60,7 @@ class dev_net(nn.Module):
         super(dev_net, self).__init__()
         self.args = args
 
-        self.conv1 = nn.Conv1d(48, 512, 3, stride=1, padding=1)
+        self.conv1 = nn.Conv1d(96, 512, 3, stride=1, padding=1)
 
         self.bn1 = nn.BatchNorm2d(512)
 

@@ -14,11 +14,9 @@ class MCTS():
     This class handles the MCTS tree.
     """
 
-    def __init__(self, game, nnet, args, game_dev=None, nnet_dev=None):
+    def __init__(self, game, nnet, args):
         self.game = game
-        self.game_dev = game_dev
         self.nnet = nnet
-        self.nnet_dev = nnet_dev
         self.args = args
         self.Qsa = {}  # stores Q values for s,a (as defined in the paper)
         self.Nsa = {}  # stores #times edge s,a was visited
@@ -28,7 +26,7 @@ class MCTS():
         self.Es = {}  # stores game.getGameEnded ended for board s
         self.Vs = {}  # stores game.getValidMoves for board s
 
-    def getActionProb(self, canonicalBoard, temp=1, cboard_dev=None):
+    def getActionProb(self, canonicalBoard, temp=1):
         """
         This function performs numMCTSSims simulations of MCTS starting from
         canonicalBoard.
@@ -38,13 +36,13 @@ class MCTS():
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
-            self.game_state_temp = copy.deepcopy(self.game_dev)
+            self.game_state_temp = copy.deepcopy(self.game)
             cboard_dev_search = self.game_state_temp.get_observation()
-            self.search(canonicalBoard, cboard_dev=cboard_dev_search)
+            self.search(canonicalBoard)
 
         # s = self.game.stringRepresentation(canonicalBoard)
-        s = cboard_dev.tobytes()
-        counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game_dev.getActionSize())]  # TODO check here
+        s = canonicalBoard.tobytes()
+        counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]  # TODO check here
         # 6 times visited
 
         if temp == 0:
@@ -59,7 +57,7 @@ class MCTS():
         probs = [x / counts_sum for x in counts]        # Why is this equally divided?
         return probs
 
-    def search(self, canonicalBoard, cboard_dev=None):
+    def search(self, canonicalBoard):
         """
         This function performs one iteration of MCTS. It is recursively called
         till a leaf node is found. The action chosen at each node is one that
@@ -79,9 +77,9 @@ class MCTS():
             v: the negative of the value of the current canonicalBoard
         """
 
-        s = self.game.stringRepresentation(canonicalBoard)
+        # s = self.game.stringRepresentation(canonicalBoard)
         # s = cboard_dev.tostring()
-        s = cboard_dev.tobytes()
+        s = canonicalBoard.tobytes()
 
         if s not in self.Es:
             # self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
@@ -92,7 +90,7 @@ class MCTS():
 
         if s not in self.Ps:
             # leaf node
-            self.Ps[s], v = self.nnet.predict(canonicalBoard, cboard_dev)
+            self.Ps[s], v = self.nnet.predict(canonicalBoard)
             # valids = self.game.getValidMoves(canonicalBoard, 1)
             # self.Ps[s] = self.Ps[s] * valids  # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
@@ -117,7 +115,7 @@ class MCTS():
 
         # pick the action with the highest upper confidence bound
         # cpuct is a constant determining the level of exploration
-        for a in range(self.game_dev.getActionSize()):
+        for a in range(self.game.getActionSize()):
             # if valids[a]:
             if (s, a) in self.Qsa:
                 u = self.Qsa[(s, a)] + self.args.cpuct * self.Ps[s][a] * math.sqrt(self.Ns[s]) / (
@@ -135,7 +133,7 @@ class MCTS():
         # next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
         # next_s = self.game.getCanonicalForm(next_s, next_player)    # TODO single-player
 
-        v = self.search(canonicalBoard, cboard_dev=next_s)     # We are at s, but we got next state's v
+        v = self.search(next_s)     # We are at s, but we got next state's v
 
         if (s, a) in self.Qsa:
             self.Qsa[(s, a)] = (self.Nsa[(s, a)] * self.Qsa[(s, a)] + v) / (self.Nsa[(s, a)] + 1)   # what kind of update is this?

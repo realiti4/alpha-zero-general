@@ -30,20 +30,17 @@ args = dotdict({
 
 class NNetWrapper(NeuralNet):
     def __init__(self, game):
-        self.nnet = onnet(game, args)
-        self.dev_net = dev_net(args)
-        self.board_x, self.board_y = game.getBoardSize()
+        self.nnet = dev_net(args)
         self.action_size = game.getActionSize()
 
         if args.cuda:
             self.nnet.cuda()
-            self.dev_net.cuda()
 
     def train(self, examples):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
-        optimizer = optim.Adam(self.dev_net.parameters())
+        optimizer = optim.Adam(self.nnet.parameters())
         scaler = GradScaler()
 
         for epoch in range(args.epochs):
@@ -70,7 +67,7 @@ class NNetWrapper(NeuralNet):
                 with autocast(enabled=False):
                 
                     # compute output
-                    out_pi, out_v = self.dev_net(boards)
+                    out_pi, out_v = self.nnet(boards)
                     l_pi = self.loss_pi(target_pis, out_pi)
                     l_v = self.loss_v(target_vs, out_v)
                     total_loss = l_pi + l_v
@@ -91,7 +88,7 @@ class NNetWrapper(NeuralNet):
                 scaler.update()
                 
 
-    def predict(self, board, board_dev=None):
+    def predict(self, board):
         """
         board: np array with board
         """
@@ -99,19 +96,19 @@ class NNetWrapper(NeuralNet):
         start = time.time()
 
         # preparing input
-        board = torch.FloatTensor(board.astype(np.float64))
-        board_dev = torch.FloatTensor(board_dev).cuda().view(1, board_dev.size, 1)    # board_dev
-        if args.cuda: board = board.contiguous().cuda()     # TODO check if contiguous is needed
-        board = board.view(1, self.board_x, self.board_y)   # [1, 6, 6]
+        # board = torch.FloatTensor(board.astype(np.float64))
+        board = torch.FloatTensor(board).cuda().view(1, board.size, 1)    # board_dev
+        # if args.cuda: board = board.contiguous().cuda()     # TODO check if contiguous is needed
+        # board = board.view(1, self.board_x, self.board_y)   # [1, 6, 6]
         self.nnet.eval()
-        self.dev_net.eval()
+        # self.dev_net.eval()
         with torch.no_grad():
             pi, v = self.nnet(board)
-            pi2, v2 = self.dev_net(board_dev)     # board_dev
+            # pi2, v2 = self.dev_net(board_dev)     # board_dev
 
         # print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
-        # return pi.exp().cpu().numpy()[0], v.cpu().numpy()[0]
-        return pi2.exp().cpu().numpy()[0], v2.cpu().numpy()[0]  # board_dev
+        return pi.exp().cpu().numpy()[0], v.cpu().numpy()[0]
+        # return pi2.exp().cpu().numpy()[0], v2.cpu().numpy()[0]  # board_dev
 
     def loss_pi(self, targets, outputs):
         return -torch.sum(targets * outputs) / targets.size()[0]

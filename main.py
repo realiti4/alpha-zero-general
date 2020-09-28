@@ -13,8 +13,8 @@ import gym
 import gym_trading
 
 env = gym.make('btc-dev-mcts-v1',
-            state_window=48+16,      # TODO check 48+4 might not be working
-            history_size=48,
+            state_window=96+12,      # TODO check 48+4 might not be working
+            history_size=96,
             testing=True,
             columns = ['close'])
 
@@ -42,8 +42,7 @@ args = dotdict({
 
 def main():
     log.info('Loading %s...', Game.__name__)
-    g = Game(6)
-    g_dev = env
+    g = env
 
     log.info('Loading %s...', nn.__name__)
     nnet = nn(g)
@@ -55,7 +54,7 @@ def main():
         log.warning('Not loading a checkpoint!')
 
     log.info('Loading the Coach...')
-    c = Coach(g, nnet, args, game_dev=g_dev)
+    c = Coach(g, nnet, args)
 
     if args.load_model:
         log.info("Loading 'trainExamples' from file...")

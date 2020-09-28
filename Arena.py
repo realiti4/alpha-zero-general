@@ -103,22 +103,22 @@ class Arena():
 # Single-player MCTS
 import numpy as np
 
-def simple_evaluation(game, game_dev, mcts):
+def simple_evaluation(game, mcts):
     trainExamples = []
-    board = game.getInitBoard()
-    board_dev = game_dev.reset(key=4)
+    # board = game.getInitBoard()
+    canonicalBoard = game.reset(key=4)
     episodeStep = 0
 
     while True:
-        canonicalBoard = game.getCanonicalForm(board, 1)
+        # canonicalBoard = game.getCanonicalForm(board, 1)
 
-        pi = mcts.getActionProb(canonicalBoard, temp=0, cboard_dev=board_dev)
-        trainExamples.append([board_dev, pi])
+        pi = mcts.getActionProb(canonicalBoard, temp=0)
+        trainExamples.append([canonicalBoard, pi])
 
         action = np.argmax(pi)
-        board_dev, _, _, info = game_dev.step(action)
+        canonicalBoard, _, _, info = game.step(action)
 
-        r = game_dev.getGameEnded()
+        r = game.getGameEnded()
 
         if r != 0:
             print(r)
