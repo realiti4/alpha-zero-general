@@ -10,6 +10,7 @@ from utils import *
 from NeuralNet import NeuralNet
 
 import torch
+import torch.nn as nn
 import torch.optim as optim
 
 from .TradingNNet import OthelloNNet as onnet
@@ -43,6 +44,9 @@ class NNetWrapper(NeuralNet):
         optimizer = optim.Adam(self.nnet.parameters())
         scaler = GradScaler()
 
+        mse = nn.MSELoss()
+        cross = nn.CrossEntropyLoss()
+
         for epoch in range(args.epochs):
             print('EPOCH ::: ' + str(epoch + 1))
             self.nnet.train()
@@ -61,15 +65,17 @@ class NNetWrapper(NeuralNet):
 
                 # predict
                 if args.cuda:
-                    boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
+                    # boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
+                    boards, target_pis, target_vs = boards.cuda(), target_pis.cuda(), target_vs.cuda()
 
                 # TODO - add mixed precision
                 with autocast(enabled=False):
                 
                     # compute output
                     out_pi, out_v = self.nnet(boards)
-                    l_pi = self.loss_pi(target_pis, out_pi)
-                    l_v = self.loss_v(target_vs, out_v)
+
+                    l_pi = cross(out_pi, target_pis.max(1)[1].long())
+                    l_v = mse(out_v.squeeze(1), target_vs)
                     total_loss = l_pi + l_v
 
                 # record loss
@@ -81,11 +87,11 @@ class NNetWrapper(NeuralNet):
 
                 # compute gradient and do SGD step
                 optimizer.zero_grad()
-                # total_loss.backward()
-                # optimizer.step()
-                scaler.scale(total_loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
+                total_loss.backward()
+                optimizer.step()
+                # scaler.scale(total_loss).backward()
+                # scaler.step(optimizer)
+                # scaler.update()
                 
 
     def predict(self, board):

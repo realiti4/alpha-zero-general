@@ -74,18 +74,20 @@ class dev_net(nn.Module):
         self.fc4 = nn.Linear(512, 1)
 
     def forward(self, s):
-        s, balance = s[:, :-1, :], s[:, -1, :]
+        # s, balance = s[:, :-1, :], s[:, -1, :]
 
         # s = F.relu(self.bn1(self.conv1(s)))     # TODO fix bn, it is not accepting 1 feature
         s = F.relu(self.conv1(s))
         s = s.squeeze(-1)
 
-        s = F.dropout(self.fc1(s), p=self.args.dropout, training=self.training)
+        # s = F.dropout(self.fc1(s), p=self.args.dropout, training=self.training)
 
-        balance = self.fc_balance(balance)
-        s = self.fc_connect(torch.cat((s, balance), dim=1))
+        # balance = self.fc_balance(balance)
+        # s = self.fc_connect(torch.cat((s, torch.tanh(balance)), dim=1))
 
         pi = self.fc3(s)
         v = self.fc4(s)
+
+        # return F.softmax(pi, dim=1), torch.tanh(v)
 
         return F.log_softmax(pi, dim=1), torch.tanh(v)
