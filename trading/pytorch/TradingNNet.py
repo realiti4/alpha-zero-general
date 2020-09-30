@@ -60,7 +60,7 @@ class dev_net(nn.Module):
         super(dev_net, self).__init__()
         self.args = args
 
-        self.conv1 = nn.Conv1d(96, 512, 3, stride=1, padding=1)
+        self.conv1 = nn.Conv1d(48, 512, 3, stride=1, padding=1)
 
         self.bn1 = nn.BatchNorm2d(512)
 
@@ -88,6 +88,6 @@ class dev_net(nn.Module):
         pi = self.fc3(s)
         v = self.fc4(s)
 
-        # return F.softmax(pi, dim=1), torch.tanh(v)
+        return F.softmax(pi, dim=1), torch.tanh(v)
 
         return F.log_softmax(pi, dim=1), torch.tanh(v)

@@ -38,7 +38,7 @@ class MCTS():
         for i in range(self.args.numMCTSSims):
             self.game_state_temp = copy.deepcopy(self.game)
             cboard_dev_search = self.game_state_temp.get_observation()
-            self.search(canonicalBoard)
+            self.search(cboard_dev_search)
 
         # s = self.game.stringRepresentation(canonicalBoard)
         s = canonicalBoard.tobytes()
@@ -90,7 +90,7 @@ class MCTS():
 
         if s not in self.Ps:
             # leaf node
-            self.Ps[s], v = self.nnet.predict(canonicalBoard)
+            self.Ps[s], v = self.nnet.predict(canonicalBoard)   # TODO we are getting same predictions even though we step. cnn problem?
             # valids = self.game.getValidMoves(canonicalBoard, 1)
             # self.Ps[s] = self.Ps[s] * valids  # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
@@ -107,6 +107,7 @@ class MCTS():
 
             # self.Vs[s] = valids
             self.Ns[s] = 0      # this is first visit so it is normal to reset the count
+            self.deneme = self.Ps[s]
             return v   # TODO possible single-player fix
 
         # valids = self.Vs[s]
@@ -128,7 +129,7 @@ class MCTS():
                 best_act = a
 
         a = best_act
-        next_s, _, _, _ = self.game_state_temp.step(a) 
+        next_s, _, _, _ = self.game_state_temp.step(a)
 
         # next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
         # next_s = self.game.getCanonicalForm(next_s, next_player)    # TODO single-player
