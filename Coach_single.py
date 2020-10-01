@@ -12,10 +12,6 @@ from tqdm import tqdm
 from Arena import Arena, simple_evaluation
 from MCTS_single import MCTS
 
-import concurrent
-import multiprocessing
-from multiprocessing import Pool
-
 log = logging.getLogger(__name__)
 
 
@@ -80,11 +76,6 @@ class Coach():
             # if r != 0:
             #     return [(x[0], x[2], r * ((-1) ** (x[1] != self.curPlayer))) for x in trainExamples]
 
-    def mp_test2(self):
-        self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
-        print('done')
-        return self.executeEpisode()
-
     def learn(self):
         """
         Performs numIters iterations with numEps episodes of self-play in each
@@ -100,9 +91,6 @@ class Coach():
             # examples of the iteration
             if not self.skipFirstSelfPlay or i > 1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
-
-                # TODO multiprocessing
-                Pool().map(self.mp_test2, range(50))
 
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
                     self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
