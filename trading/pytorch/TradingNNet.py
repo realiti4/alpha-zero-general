@@ -82,7 +82,7 @@ class dev_net(nn.Module):
 
         s = torch.tanh(s)   # tanh might be helping a lot after a conv TODO find out why
 
-        # s = F.dropout(self.fc1(s), p=self.args.dropout, training=self.training)
+        s = F.dropout(self.fc1(s), p=self.args.dropout, training=self.training)
 
         balance = torch.tanh(self.fc_balance(balance))
         s = self.fc_connect(torch.cat((s, balance), dim=1))
