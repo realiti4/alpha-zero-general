@@ -1,4 +1,13 @@
+import time
 import logging
+import coloredlogs
+
+from trading.pytorch.NNet import NNetWrapper as nn
+from utils import *
+
+import gym
+import gym_trading
+
 import os
 import sys
 import copy
@@ -16,7 +25,36 @@ import concurrent
 import multiprocessing
 from multiprocessing import Pool
 
+env = gym.make('btc-dev-mcts-v1',
+            state_window=48+96,      # TODO check 48+4 might not be working
+            history_size=48,
+            testing=True,
+            columns = ['close'])
+
 log = logging.getLogger(__name__)
+
+coloredlogs.install(level='INFO')  # Change this to DEBUG to see more info.
+
+args = dotdict({
+    'numIters': 1000,
+    'numEps': 25,              # Number of complete self-play games to simulate during a new iteration.
+    'tempThreshold': 15,        #
+    'updateThreshold': 0.6,     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
+    'maxlenOfQueue': 200000,    # Number of game examples to train the neural networks.
+    'numMCTSSims': 25,          # Number of games moves for MCTS to simulate.
+    'arenaCompare': 40,         # Number of games to play during arena play to determine if new net will be accepted.
+    'cpuct': 1,
+
+    'checkpoint': './temp/',
+    'load_model': False,
+    'load_folder_file': ('./temp','checkpoint_7.pth.tar'),
+    'numItersForTrainExamplesHistory': 20,
+
+})
+
+
+# log = logging.getLogger(__name__)
+
 
 
 class Coach():
@@ -80,9 +118,9 @@ class Coach():
             # if r != 0:
             #     return [(x[0], x[2], r * ((-1) ** (x[1] != self.curPlayer))) for x in trainExamples]
 
-    def mp_test2(self):
+    def mp_test2(self, x):
         self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
-        print('done')
+        # print(x)
         return self.executeEpisode()
 
     def learn(self):
@@ -101,12 +139,28 @@ class Coach():
             if not self.skipFirstSelfPlay or i > 1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
 
-                # TODO multiprocessing
-                Pool().map(self.mp_test2, range(50))
+                # TODO Multiprocessing
+                """
+                    - It freezes sometimes
+                    - Fix tqdm bar for self learning
+                    - 100 mü gelecek 25 mi?
+                """
+                start = time.time()
+                data = Pool().map(self.mp_test2, range(100))
 
-                for _ in tqdm(range(self.args.numEps), desc="Self Play"):
-                    self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
-                    iterationTrainExamples += self.executeEpisode()
+                for item in data:
+                    iterationTrainExamples += item
+
+                print(f'it took: {time.time() - start}')
+                print('deubg')                
+
+                # for _ in tqdm(range(self.args.numEps), desc="Self Play"):
+                #     p1 = multiprocessing.Process(target=self.mp_test2)
+
+                #     p1.start()
+                #     p1.join()
+                #     # self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
+                #     # iterationTrainExamples += self.executeEpisode()
 
                 # save the iteration examples to the history 
                 self.trainExamplesHistory.append(iterationTrainExamples)
@@ -185,3 +239,35 @@ class Coach():
 
             # examples based on the model were already collected (loaded)
             self.skipFirstSelfPlay = True
+
+def main():
+    # log.info('Loading %s...', Game.__name__)
+    g = env
+
+    log.info('Loading %s...', nn.__name__)
+    nnet = nn(g)
+
+    if args.load_model:
+        log.info('Loading checkpoint "%s/%s"...', args.load_folder_file)
+        nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
+    else:
+        log.warning('Not loading a checkpoint!')
+
+    log.info('Loading the Coach...')
+    c = Coach(g, nnet, args)
+
+    if args.load_model:
+        log.info("Loading 'trainExamples' from file...")
+        c.loadTrainExamples()
+
+    log.info('Starting the learning process 🎉')
+    c.learn()
+
+
+if __name__ == "__main__":
+    multiprocessing.set_start_method('spawn')
+    # try:
+        
+    # except RuntimeError:
+    #     pass
+    main()
