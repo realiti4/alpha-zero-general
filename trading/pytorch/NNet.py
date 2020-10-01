@@ -20,11 +20,11 @@ from torch.cuda.amp import GradScaler
 
 args = dotdict({
     'lr': 0.001,
-    'dropout': 0.3,
+    'dropout': 0.4,
     'epochs': 10,
     'batch_size': 64,
     'cuda': torch.cuda.is_available(),
-    'num_channels': 512,
+    'num_channels': 32,
 })
 
 
@@ -41,6 +41,7 @@ class NNetWrapper(NeuralNet):
         examples: list of examples, each example is of form (board, pi, v)
         """
         optimizer = optim.Adam(self.nnet.parameters())
+        # optimizer = optim.SGD(self.nnet.parameters(), lr=args.lr)
         scaler = GradScaler()
 
         for epoch in range(args.epochs):

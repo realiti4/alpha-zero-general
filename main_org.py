@@ -7,14 +7,14 @@ from othello.OthelloGame import OthelloGame as Game
 from othello.pytorch.NNet import NNetWrapper as nn
 from utils import *
 
-import gym
-import gym_trading
+# import gym
+# import gym_trading
 
-env = gym.make('btc-dev-mcts-v1',
-            state_window=48+16,      # TODO check 48+4 might not be working
-            history_size=48,
-            testing=True,
-            columns = ['close'])
+# env = gym.make('btc-dev-mcts-v1',
+#             state_window=48+16,      # TODO check 48+4 might not be working
+#             history_size=48,
+#             testing=True,
+#             columns = ['close'])
 
 log = logging.getLogger(__name__)
 

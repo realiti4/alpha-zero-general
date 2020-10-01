@@ -40,7 +40,6 @@ class MCTS():
             cboard_dev_search = self.game_state_temp.get_observation()
             self.search(canonicalBoard)
 
-        # s = self.game.stringRepresentation(canonicalBoard)
         s = canonicalBoard.tobytes()
         counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]  # TODO check here
         # 6 times visited
@@ -77,12 +76,9 @@ class MCTS():
             v: the negative of the value of the current canonicalBoard
         """
 
-        # s = self.game.stringRepresentation(canonicalBoard)
-        # s = cboard_dev.tostring()
         s = canonicalBoard.tobytes()
 
         if s not in self.Es:
-            # self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
             self.Es[s] = self.game_state_temp.getGameEnded(debug=False)
         if self.Es[s] != 0:
             # terminal node
@@ -129,9 +125,6 @@ class MCTS():
 
         a = best_act
         next_s, _, _, _ = self.game_state_temp.step(a) 
-
-        # next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
-        # next_s = self.game.getCanonicalForm(next_s, next_player)    # TODO single-player
 
         v = self.search(next_s)     # We are at s, but we got next state's v
 
