@@ -36,7 +36,8 @@ class MCTS():
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
-            self.game_state_temp = copy.deepcopy(self.game)
+            # self.game_state_temp = copy.deepcopy(self.game)
+            self.game_state_temp = copy.copy(self.game)     # TODO experiment with this for much faster training
             cboard_dev_search = self.game_state_temp.get_observation()
             self.search(canonicalBoard)
 

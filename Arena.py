@@ -102,12 +102,31 @@ class Arena():
 
 # Single-player MCTS
 import numpy as np
+import matplotlib.pyplot as plt
+
+# Plotting
+def plot_end_result(plot_price, plot_action):
+    time = np.arange(len(plot_price))
+    # colors {0: 'b', 1: 'r'}
+    print(plot_action)
+
+    plt.plot(plot_price, zorder=0)
+    plt.scatter(x=time,y=plot_price,c=['b' if x == 1 else 'r' for x in plot_action])
+    
+    plt.show()
+
+    print('debug')
+
+# plot_end_result([4, 10, 40, 20, 18], [1, 1, 0, 0, 1])
 
 def simple_evaluation(game, mcts):
     trainExamples = []
     # board = game.getInitBoard()
-    canonicalBoard = game.reset(key=4)
+    canonicalBoard = game.reset(key=0)
     episodeStep = 0
+
+    plot_price = []
+    plot_action = []
 
     while True:
         # canonicalBoard = game.getCanonicalForm(board, 1)
@@ -116,6 +135,10 @@ def simple_evaluation(game, mcts):
         trainExamples.append([canonicalBoard, pi])
 
         action = np.argmax(pi)
+
+        plot_price.append(game.current_price)
+        plot_action.append(action)
+
         canonicalBoard, _, _, info = game.step(action)
 
         r = game.getGameEnded()
@@ -123,6 +146,7 @@ def simple_evaluation(game, mcts):
         if r != 0:
             print(r)
             print(info)
+            plot_end_result(plot_price, plot_action)
             return info['achievement']
 
 
