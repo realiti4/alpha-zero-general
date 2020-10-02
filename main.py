@@ -10,7 +10,7 @@ import gym
 import gym_trading
 
 env = gym.make('btc-dev-mcts-v1',
-            state_window=48+96,      # TODO check 48+4 might not be working
+            state_window=48+12,      # TODO check 48+4 might not be working
             history_size=48,
             testing=True,
             columns = ['close'])
