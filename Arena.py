@@ -118,7 +118,7 @@ def plot_end_result(plot_price, plot_action):
     plt.plot(plot_price, zorder=0)
     plt.scatter(x=time,y=plot_price,c=['b' if x == 1 else 'r' for x in plot_action])
     
-    plt.show()
+    plt.show()  # TODO save plots instead of showing since it is not working in mp
 
     print('debug')
 

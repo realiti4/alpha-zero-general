@@ -141,8 +141,9 @@ class Coach():
 
                 # TODO Multiprocessing
                 """
-                    - It freezes sometimes - try with 
-                    - Fix tqdm bar for self learning
+                    - It freezes sometimes
+                    - Memory optimizations if possible
+                    - Check if results are the same with original implementation, seems different for first iter
                 """
                 start = time.time()
                 with Pool(4) as pool:
