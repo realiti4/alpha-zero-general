@@ -40,7 +40,7 @@ class NNetWrapper(NeuralNet):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
-        optimizer = optim.Adam(self.nnet.parameters())
+        optimizer = optim.Adam(self.nnet.parameters(), lr=args.lr)
         # optimizer = optim.SGD(self.nnet.parameters(), lr=args.lr)
         scaler = GradScaler()
 
