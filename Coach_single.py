@@ -26,8 +26,8 @@ import multiprocessing
 from multiprocessing import Pool
 
 env = gym.make('btc-dev-mcts-v1',
-            state_window=48+96,      # TODO check 48+4 might not be working
-            history_size=48,
+            # state_window=48+12,      # TODO check 48+4 might not be working
+            # history_size=48,
             testing=True,
             columns = ['close'])
 
@@ -37,7 +37,7 @@ coloredlogs.install(level='INFO')  # Change this to DEBUG to see more info.
 
 args = dotdict({
     'numIters': 1000,
-    'numEps': 25,              # Number of complete self-play games to simulate during a new iteration.
+    'numEps': 100,              # Number of complete self-play games to simulate during a new iteration.
     'tempThreshold': 15,        #
     'updateThreshold': 0.6,     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
     'maxlenOfQueue': 200000,    # Number of game examples to train the neural networks.
@@ -141,26 +141,24 @@ class Coach():
 
                 # TODO Multiprocessing
                 """
-                    - It freezes sometimes
+                    - It freezes sometimes - try with 
                     - Fix tqdm bar for self learning
-                    - 100 mü gelecek 25 mi?
                 """
                 start = time.time()
-                data = Pool().map(self.mp_test2, range(100))
+                with Pool(4) as pool:
+                    # data = pool.map(self.mp_test2, range(100))
+                    data = list(tqdm(pool.imap(self.mp_test2, range(self.args.numEps)), total=self.args.numEps, desc="Self Play"))
+                    # print('debug')
 
                 for item in data:
                     iterationTrainExamples += item
 
                 print(f'it took: {time.time() - start}')
-                print('deubg')                
+                # print('deubg')                
 
                 # for _ in tqdm(range(self.args.numEps), desc="Self Play"):
-                #     p1 = multiprocessing.Process(target=self.mp_test2)
-
-                #     p1.start()
-                #     p1.join()
-                #     # self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
-                #     # iterationTrainExamples += self.executeEpisode()
+                #     self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
+                #     iterationTrainExamples += self.executeEpisode()
 
                 # save the iteration examples to the history 
                 self.trainExamplesHistory.append(iterationTrainExamples)

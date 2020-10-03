@@ -104,6 +104,7 @@ class Arena():
 import numpy as np
 import matplotlib
 matplotlib.use('TKAgg')     # Agg not displaying plot
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 # Plotting
@@ -112,7 +113,7 @@ def plot_end_result(plot_price, plot_action):
     # colors {0: 'b', 1: 'r'}
     print(plot_action)
 
-    fig = plt.figure()
+    # fig = plt.figure()
 
     plt.plot(plot_price, zorder=0)
     plt.scatter(x=time,y=plot_price,c=['b' if x == 1 else 'r' for x in plot_action])
