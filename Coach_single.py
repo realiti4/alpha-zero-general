@@ -26,9 +26,10 @@ import multiprocessing
 from multiprocessing import Pool
 
 env = gym.make('btc-dev-mcts-v1',
-            # state_window=48+12,      # TODO check 48+4 might not be working
-            # history_size=48,
+            state_window=48+174,      # 48+18, 48+174
+            history_size=48,
             testing=True,
+            continuous_reward=False,
             columns = ['close'])
 
 log = logging.getLogger(__name__)
@@ -49,6 +50,8 @@ args = dotdict({
     'load_model': False,
     'load_folder_file': ('./temp','checkpoint_7.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
+
+    'threads': 4                # Thread count for multiprocessing
 
 })
 
@@ -146,7 +149,7 @@ class Coach():
                     - Check if results are the same with original implementation, seems different for first iter
                 """
                 start = time.time()
-                with Pool(4) as pool:
+                with Pool(self.args.threads) as pool:
                     # data = pool.map(self.mp_test2, range(100))
                     data = list(tqdm(pool.imap(self.mp_test2, range(self.args.numEps)), total=self.args.numEps, desc="Self Play"))
                     # print('debug')
