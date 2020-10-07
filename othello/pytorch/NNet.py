@@ -64,7 +64,7 @@ class NNetWrapper(NeuralNet):
                     boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
 
                 # TODO - add mixed precision
-                with autocast(enabled=True):
+                with autocast(enabled=False):
                 
                     # compute output
                     out_pi, out_v = self.nnet(boards)

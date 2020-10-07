@@ -21,15 +21,18 @@ from tqdm import tqdm
 from Arena import Arena, simple_evaluation
 from MCTS_single import MCTS
 
-import concurrent
-import multiprocessing
-from multiprocessing import Pool
+# import concurrent
+# import multiprocessing
+# from multiprocessing import Pool
+
+import torch.multiprocessing as multiprocessing      # TODO test these
+from torch.multiprocessing import Pool
 
 env = gym.make('btc-dev-mcts-v1',
-            state_window=48+174,      # 48+18, 48+174
-            history_size=48,
+            # state_window=48+174,      # 48+18, 48+174
+            # history_size=48,
             testing=True,
-            continuous_reward=False,
+            continuous_reward=True,
             columns = ['close'])
 
 log = logging.getLogger(__name__)
