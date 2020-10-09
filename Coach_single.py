@@ -28,11 +28,11 @@ from MCTS_single import MCTS
 import torch.multiprocessing as multiprocessing      # TODO test these
 from torch.multiprocessing import Pool
 
-env = gym.make('btc-dev-mcts-v1',
+env = gym.make('Trading-v1',
             # state_window=48+174,      # 48+18, 48+174
             # history_size=48,
             testing=True,
-            continuous_reward=True,
+            # continuous_reward=True,
             columns = ['close'])
 
 log = logging.getLogger(__name__)
