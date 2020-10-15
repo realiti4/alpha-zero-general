@@ -161,8 +161,8 @@ class Coach():
                     iterationTrainExamples += item
 
                 print(f'it took: {time.time() - start}')
-                # print('deubg')                
 
+                # # Enable here to disable multiprocessing
                 # for _ in tqdm(range(self.args.numEps), desc="Self Play"):
                 #     self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
                 #     iterationTrainExamples += self.executeEpisode()
